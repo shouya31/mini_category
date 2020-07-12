@@ -1,17 +1,58 @@
 window.addEventListener('load', () => {
   const selectWrap = document.getElementById('select-wrap')
   const parentCategory = document.getElementById('parent-category')
+  const XHR = new XMLHttpRequest();
+
+  // 指定した要素が存在する場合、その要素を削除する関数
+  const deleteChildElement = (element) => {
+    if (document.getElementById(element) !== null ) {
+      document.getElementById(element).remove()
+    }
+  }
+
+  // XHRを用いた通信を行う関数
+  const execXHR = (id) => {
+    XHR.open("GET", `/search/${id}`, true);
+    XHR.responseType = "json";
+    XHR.send();
+  }
+
+  // カテゴリーの子の値を全て取得する関数
+  const getChildCategoryData = () => {
+    const parentValue = parentCategory.value
+    execXHR(parentValue)
+    XHR.onload = () => {
+      const items = XHR.response.item;
+      appendChildSelect(items)
+
+      const childCategory = document.getElementById('child-select')
+
+      // 子プルダウンの値が変化によってイベント発火する
+      childCategory.addEventListener('change', () => {
+        deleteChildElement('grand-child-select-wrap')
+        getGrandchildCategoryData(childCategory)
+      })
+    }
+  }
+
+  // カテゴリーの孫の値を全て取得する関数
+  const getGrandchildCategoryData = (childCategory) => {
+    const childValue = childCategory.value
+    execXHR(childValue)
+    XHR.onload = () => {
+      const GrandChildItems = XHR.response.item;
+      appendGrandChildSelect(GrandChildItems)
+    }
+  }
 
   // 子カテゴリーのプルダウンを表示させる関数
   const appendChildSelect = (items) => {
 
     const childWrap = document.createElement('div')
-    childWrap.setAttribute('id', 'child-select-wrap')
     const childSelect = document.createElement('select')
 
     childSelect.setAttribute('id', 'child-select')
-
-    childWrap.appendChild(childSelect)
+    childWrap.setAttribute('id', 'child-select-wrap')
 
     items.forEach((item, i) => {
       const childOption = document.createElement('option')
@@ -20,6 +61,8 @@ window.addEventListener('load', () => {
 
       childSelect.appendChild(childOption)
     });
+
+    childWrap.appendChild(childSelect)
     selectWrap.appendChild(childWrap)
   }
 
@@ -28,13 +71,11 @@ window.addEventListener('load', () => {
 
       const childWrap = document.getElementById('child-select-wrap')
       const grandchildWrap = document.createElement('div')
-      grandchildWrap.setAttribute('id', 'grand-child-select-wrap')
-
       const grandchildSelect = document.createElement('select')
 
+      grandchildWrap.setAttribute('id', 'grand-child-select-wrap')
       grandchildSelect.setAttribute('id', 'child-select')
 
-      grandchildWrap.appendChild(grandchildSelect)
       items.forEach((item, i) => {
         const grandchildOption = document.createElement('option')
         grandchildOption.innerHTML = item.name
@@ -42,38 +83,14 @@ window.addEventListener('load', () => {
 
         grandchildSelect.appendChild(grandchildOption)
       });
+
+      grandchildWrap.appendChild(grandchildSelect)
       childWrap.appendChild(grandchildWrap)
     }
 
+    // 親プルダウンの値が変化によってイベント発火する
   parentCategory.addEventListener('change', () => {
-    if (document.getElementById('child-select-wrap') !== null ) {
-      document.getElementById('child-select-wrap').remove()
-    }
-    const parentValue = parentCategory.value
-    const XHR = new XMLHttpRequest();
-    XHR.open("GET", `/search/${parentValue}`, true);
-    XHR.responseType = "json";
-    XHR.send();
-    XHR.onload = () => {
-      const items = XHR.response.item;
-      console.log(items)
-      appendChildSelect(items)
-
-      const childCategory = document.getElementById('child-select')
-      childCategory.addEventListener('change', () => {
-        if (document.getElementById('grand-child-select-wrap') !== null ) {
-          document.getElementById('grand-child-select-wrap').remove()
-        }
-        const childValue = childCategory.value
-        XHR.open("GET", `/search/${childValue}`, true);
-        XHR.responseType = "json";
-        XHR.send();
-        XHR.onload = () => {
-          const GrandChildItems = XHR.response.item;
-          console.log(GrandChildItems)
-          appendGrandChildSelect(GrandChildItems)
-        }
-      })
-    }
+    deleteChildElement('child-select-wrap')
+    getChildCategoryData()
   })
 })
