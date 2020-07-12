@@ -1,0 +1,10 @@
+<%= form_with model: @categories, url: '/searches/new',id: "form" do |f|%>
+  <div id="form-list">
+    <%= f.label :ancestry_id do %>
+      カテゴリー<span class="form-require">必須</span>
+    <% end %>
+    <div id="select-wrap">
+      <%= f.collection_select :ancestry, @maincategories, :id, :name, {include_blank: "---"}, {id: "parent-category" } %>
+    </div>
+  </div>
+<% end %>
